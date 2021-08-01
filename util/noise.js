@@ -494,3 +494,87 @@ function getNoiseAlt(x, y, z, fx = 0.8, fy = 0.8, fz = 0.8, octaves = []) {
     });
     return ((v / range) + 1) / 2;
 }
+function landColorNoise( x, y, z ) {
+    const _xo = 100;
+    const _yo = 100;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function landHeightNoise( x, y, z ) {
+    const _xo = 100;
+    const _yo = 100;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function waterColorNoise( x, y, z ) {
+    const _xo = 0;
+    const _yo = 0;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function waterHeightNoise( x, y, z ) {
+    const _xo = 1;
+    const _yo = 1;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function waterAlphaNoise( x, y, z ) {
+    const _xo = 0;
+    const _yo = 0;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function cloudAlphaNoise( x, y, z ) {
+    const _xo = 0;
+    const _yo = 0;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.9;
+    const fy = 0.9;
+    const fz = 0.9;
+    const octaves = [
+        [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};

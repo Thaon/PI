@@ -55,7 +55,11 @@
 
 <body>
 
+    <script src='../assets/palettes/endesga32.js'></script>
+
     <script src='../util/noise.js'></script>
+
+    <script src='../util/image_parser.js'></script>
 
     <script type="text/javascript">
         // KEYBOARD
@@ -118,16 +122,16 @@
         crosshairimg.src = "../assets/crosshair.png";
 
         // landmass
-        var landmassimg = new Image();
-        landmassimg.onload = ready;
-        landmassimg.src = "../assets/tilemaps/landmass.png";
+        // var landmassimg = new Image();
+        // landmassimg.onload = ready;
+        // landmassimg.src = "../assets/tilemaps/landmass.png";
 
 
         function ready() {
             pctx.fillStyle = "#ff0000";
             pctx.fillRect(0, 0, player.health, 1);
             pctx.drawImage(crosshairimg, 0, 0, canvassize, canvassize);
-            ctx.drawImage(landmassimg, 0, 0);
+            // ctx.drawImage(landmassimg, 0, 0);
         }
 
         // 
@@ -173,9 +177,10 @@
 
             player.xtime++;
 
-            var max = -Infinity,
-                min = Infinity;
-            var noisefn = getNoiseAlt;
+            const ebbFlowRate = 10;
+            
+            const nz = Math.cos( (player.xtime / ebbFlowRate) * 0.2 ); // TODO: figure out how to control this lols
+            // console.log('nz === ',nz);
 
             for (var x = 0; x < cWidth; x++) {
                 for (var y = 0; y < cHeight; y++) {
@@ -186,32 +191,87 @@
                     // boiling tex
                     const nx = (x / player.multiplier) + player.xpos;
                     const ny = (y / player.multiplier) + player.ypos;
-                    const nz = player.xtime / (player.xspeed * 4);
 
-                    /*
-                    change the fx and octaves numbers to tweak the noise
-                    */
-                    const fx = 0.9;
-                    const fy = 0.9;
-                    const fz = 0.9;
-                    const octaves = [
-                        [2, 0.5],
-                        [2, 0.5],
-                    ];
-                    // TODO: Hook "wind direction" and "wind speed" into noise fx and fy
+                    const lhv = landHeightNoise(nx, ny, 0);
+                    
+                    // const waterColorValue = waterColorNoise(nx, ny, nz);
+                    // const waterColor2Value = waterColor2Noise(nx, ny, nz);
+                    
+                    // const waterHeightValue = waterHeightNoise(nx, ny, nz);
+                    
+                    // const waterColorValue = waterColorNoise(nx, ny, nz);
+                    // const waterColor2Value = waterColor2Noise(nx, ny, nz);
+                    
+                    //TODO: Hook "wind direction" and "wind speed" into noise fx and fy
+                    var wcv = waterColorNoise(nx, ny, nz);
 
-                    var value = noisefn(nx, ny, nz, fx, fy, fz, octaves);
-
-                    value = Math.floor(value * 255);
-
-                    var cell = (x + y * cWidth) * 4;
-                    const r = Math.floor(value/10);
-                    const g = Math.floor(value/3);
-                    const b = Math.floor(value/2);
-                    data[cell] = r
-                    data[cell + 1] = g
-                    data[cell + 2] = b;
-                    data[cell + 3] = 255;
+                    if( lhv > 0.5 ) {
+                        var cell = (x + y * cWidth) * 4;
+                        const rgb = tweenColors(
+                            PALETTE.water1,
+                            PALETTE.water2,
+                            3,
+                            Math.floor(3 * wcv)
+                        );
+                        const r = rgb.r;
+                        const g = rgb.g;
+                        const b = rgb.b;
+                        data[cell] = r;
+                        data[cell + 1] = g;
+                        data[cell + 2] = b;
+                        data[cell + 3] = 255;
+                    } 
+                    else if (  lhv > 0.43 && wcv > 0.3 ) {
+                        const lcv = landColorNoise(nx, ny, 0);
+                        var cell = (x + y * cWidth) * 4;
+                        const rgb = tweenColors(
+                            PALETTE.water0,
+                            PALETTE.water1,
+                            10,
+                            Math.floor(10 * wcv)
+                        );
+                        const r = rgb.r;
+                        const g = rgb.g;
+                        const b = rgb.b;
+                        data[cell] = r;
+                        data[cell + 1] = g;
+                        data[cell + 2] = b;
+                        data[cell + 3] = 255;
+                    }
+                    else if (  lhv > 0.4 ) {
+                        const lcv = landColorNoise(nx, ny, 0);
+                        var cell = (x + y * cWidth) * 4;
+                        const rgb = tweenColors(
+                            PALETTE.grass1,
+                            PALETTE.sand0,
+                            10,
+                            Math.floor(10 * lcv)
+                        );
+                        const r = rgb.r;
+                        const g = rgb.g;
+                        const b = rgb.b;
+                        data[cell] = r;
+                        data[cell + 1] = g;
+                        data[cell + 2] = b;
+                        data[cell + 3] = 255;
+                    }
+                    else {
+                        const lcv = landColorNoise(nx, ny, 0);
+                        var cell = (x + y * cWidth) * 4;
+                        const rgb = tweenColors(
+                            PALETTE.grass1,
+                            PALETTE.grass0,
+                            10,
+                            Math.floor(10 * lcv)
+                        );
+                        const r = rgb.r;
+                        const g = rgb.g;
+                        const b = rgb.b;
+                        data[cell] = r;
+                        data[cell + 1] = g;
+                        data[cell + 2] = b;
+                        data[cell + 3] = 255;
+                    }
                 }
             }
 
@@ -219,13 +279,13 @@
             ctx.putImageData(image, 0, 0);
 
             // draw land overlay
-            ctx.drawImage(
-                landmassimg,
-                -Math.floor(player.xpos * player.multiplier) - 10,
-                -Math.floor(player.ypos * player.multiplier) - 10,
-                256,
-                256
-            );
+            // ctx.drawImage(
+            //     landmassimg,
+            //     -Math.floor(player.xpos * player.multiplier) - 10,
+            //     -Math.floor(player.ypos * player.multiplier) - 10,
+            //     256,
+            //     256
+            // );
 
             // create aligned house for each in array
             for (var i = 0; i < houses.length; i++) {
