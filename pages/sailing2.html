@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>sailing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .on {
+            background-color: #222;
+        }
+
+        .off {
+            background-color: maroon;
+        }
+
+        .green {
+            background-color: green;
+        }
+
+        html,
+        body {
+            background: #333;
+        }
+
+        body {
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            transform: scale(4);
+        }
+
+        canvas {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            position: relative;
+            display: block;
+            width: 64px;
+            height: 64px;
+        }
+
+        #playercnv {
+            position: absolute;
+            z-index: 9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script src='../util/noise.js'></script>
+    <script src='../util/image_parser.js'></script>
+
+    <script type="text/javascript">
+        // KEYBOARD
+        window.addEventListener('keyup', function (event) {
+            keyboard.onKeyup(event);
+        }, false);
+        window.addEventListener('keydown', function (event) {
+            keyboard.onKeydown(event);
+        }, false);
+
+
+
+        var keyboard = {
+            _pressed: {},
+
+            LEFT: 37,
+            UP: 38,
+            RIGHT: 39,
+            DOWN: 40,
+
+            isDown: function (keyCode) {
+                return this._pressed[keyCode];
+            },
+
+            onKeydown: function (event) {
+                this._pressed[event.keyCode] = true;
+            },
+
+            onKeyup: function (event) {
+                delete this._pressed[event.keyCode];
+            }
+        };
+
+
+        //
+        var canvassize = 64;
+
+        // perlin canvas
+        var perlincol = document.createElement('canvas');
+        var ctx = perlincol.getContext('2d');
+        perlincol.id = "perlincol";
+        document.body.appendChild(perlincol);
+
+        // size of textures
+        perlincol.width = canvassize;
+        perlincol.height = canvassize;
+
+
+        // GUI canvas
+        var playercnv = document.createElement('canvas');
+        var pctx = playercnv.getContext('2d');
+        playercnv.id = "playercnv";
+        document.body.appendChild(playercnv);
+        playercnv.width = canvassize;
+        playercnv.height = canvassize;
+
+        // crosshair
+        var crosshairimg = new Image();
+        crosshairimg.onload = ready;
+        crosshairimg.src = "../assets/crosshair.png";
+
+        // landmass
+        var landmassimg = new Image();
+        landmassimg.onload = ready;
+        landmassimg.src = "../assets/tilemaps/landmass.png";
+
+
+        function ready() {
+            pctx.fillStyle = "#ff0000";
+            pctx.fillRect(0, 0, player.health, 1);
+            pctx.drawImage(crosshairimg, 0, 0, canvassize, canvassize);
+            ctx.drawImage(landmassimg, 0, 0);
+        }
+
+        // 
+        var nowalk = false;
+        var image = ctx.createImageData(perlincol.width, perlincol.height);
+        var data = image.data;
+        var housesize = 10;
+        var enterhouse = false;
+
+        // the big player array
+        var player = {
+            xpos: 0,
+            ypos: 0,
+            oldxpos: 0,
+            oldypos: 0,
+            health: canvassize,
+            xtime: 0,
+            xspeed: 200,
+            multiplier: 30
+        };
+
+
+        // green houses array
+        var houses = [{
+                type: 'church',
+                x: 27,
+                y: 27,
+                b: 10
+            },
+            {
+                type: 'jail',
+                x: 80,
+                y: 90,
+                b: 11
+            },
+        ];
+
+
+        // bring the noise
+        function drawFrame() {
+            var cWidth = perlincol.width;
+            var cHeight = perlincol.height;
+
+            player.xtime++;
+
+            var max = -Infinity,
+                min = Infinity;
+            var noisefn = getNoiseAlt;
+
+            for (var x = 0; x < cWidth; x++) {
+                for (var y = 0; y < cHeight; y++) {
+
+                    // still tex
+                    // var value = noisefn((x / 30)+player.xpos, (y / 30)+player.ypos, 2);
+
+                    // boiling tex
+                    const nx = (x / player.multiplier) + player.xpos;
+                    const ny = (y / player.multiplier) + player.ypos;
+                    const nz = player.xtime / (player.xspeed * 4);
+
+                    /*
+                    change the fx and octaves numbers to tweak the noise
+                    */
+                    const fx = 0.9;
+                    const fy = 0.9;
+                    const fz = 0.9;
+                    const octaves = [
+                        [2, 0.5],
+                        [2, 0.5],
+                    ];
+                    // TODO: Hook "wind direction" and "wind speed" into noise fx and fy
+
+                    var value = noisefn(nx, ny, nz, fx, fy, fz, octaves);
+
+                    value = Math.floor(value * 255);
+
+                    var cell = (x + y * cWidth) * 4;
+                    const r = Math.floor(value/10);
+                    const g = Math.floor(value/3);
+                    const b = Math.floor(value/2);
+                    data[cell] = r
+                    data[cell + 1] = g
+                    data[cell + 2] = b;
+                    data[cell + 3] = 255;
+                }
+            }
+
+            // perlin sea
+            ctx.putImageData(image, 0, 0);
+
+            // draw land overlay
+            ctx.drawImage(
+                landmassimg,
+                -Math.floor(player.xpos * player.multiplier) - 10,
+                -Math.floor(player.ypos * player.multiplier) - 10,
+                256,
+                256
+            );
+
+            // create aligned house for each in array
+            for (var i = 0; i < houses.length; i++) {
+                // nowalk walls
+                ctx.fillStyle = "rgb(255, 255, 0)";
+                ctx.fillRect(Math.floor(houses[i].x - (player.xpos * player.multiplier)) - 1, Math.floor(houses[i].y - (
+                    player.ypos * player.multiplier)) - 1, housesize + 2, housesize + 1); // yellow walls
+
+                // green houses
+                ctx.fillStyle = "rgb(90, 255, " + houses[i].b + ")";
+                ctx.fillRect(Math.floor(houses[i].x - (player.xpos * player.multiplier)), Math.floor(houses[i].y - (
+                    player.ypos * player.multiplier)), housesize, housesize); // green house
+
+            } // create houses for loop
+
+            // mapcheck [check colour under crosshair]
+            var xdata = ctx.getImageData((canvassize / 2) - 1, canvassize / 2, 1, 1);
+
+            // yellow wall check
+            if (xdata.data[0] == 255 && xdata.data[1] == 255 && xdata.data[2] == 0) {
+                nowalk = true;
+            } else {
+                nowalk = false;
+            }
+
+            // // colour check>body class
+            // if (xdata.data[0] > 50 && xdata.data[1] != 255 ) {
+            //   document.body.classList = 'off'; 
+            //   // lose health
+            //   // changehealth(-0.1);
+            // } else {
+            //   document.body.classList = 'on';
+            // }
+
+            // green
+            if (xdata.data[0] == 90 && xdata.data[1] == 255 && xdata.data[2] > 0) {
+                document.body.classList = 'green';
+                // changehealth(0.1); // restore health
+
+                // enter
+                enteronce(xdata.data[2]);
+            } else {
+                enterhouse = false;
+            }
+
+            // update player/map position
+            playerupdate(xdata.data[0])
+
+        } // end drawframe	
+
+
+        // edit player health
+        function changehealth(num) {
+            player.health = player.health + num;
+            pctx.clearRect(0, 0, canvassize, canvassize);
+            pctx.fillStyle = "#ff0000";
+            pctx.drawImage(crosshairimg, 0, 0, canvassize, canvassize); // crosshair
+            pctx.fillRect(0, 0, Math.floor(player.health), 1); // status bar
+            // game over
+            if (player.health < 0) {
+                pctx.fillStyle = "#ffff00";
+                pctx.drawImage(crosshairimg, 0, 0, canvassize, canvassize); // crosshair
+                pctx.fillRect(0, 0, canvassize, 1); // status bar    
+                setTimeout(function () {
+                    player.health = canvassize;
+                    pctx.fillStyle = "#ff0000";
+                    pctx.drawImage(crosshairimg, 0, 0, canvassize, canvassize); // crosshair
+                    pctx.fillRect(0, 0, player.health, 1); // status bar
+                }, 100);
+            }
+            // maxxed bar
+            if (player.health > canvassize) {
+                player.health = canvassize
+            }
+        }
+
+        // player movement update
+        function playerupdate(data) {
+
+            // return to oldpos if nowalk
+            if (nowalk == true) {
+                player.xpos = player.oldxpos;
+                player.ypos = player.oldypos;
+            }
+
+            // move player
+            if (keyboard.isDown(keyboard.LEFT)) {
+                player.oldxpos = player.xpos;
+                player.xpos -= 0.02;
+            }
+            if (keyboard.isDown(keyboard.RIGHT)) {
+                player.oldxpos = player.xpos;
+                player.xpos += 0.02;
+            }
+            if (keyboard.isDown(keyboard.UP)) {
+                player.oldypos = player.ypos;
+                player.ypos -= 0.02;
+            }
+            if (keyboard.isDown(keyboard.DOWN)) {
+                player.oldypos = player.ypos;
+                player.ypos += 0.02;
+            }
+
+
+        }
+
+
+        // enter house
+        var enteronce = (function () {
+            return function (argument) {
+                if (!enterhouse) {
+                    enterhouse = true;
+                    // DO STUFF ONCE
+                    console.log('enter house', (houses[argument - 10].b) - 10)
+                }
+            };
+        })();
+
+
+
+
+        // start
+        animate();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            drawFrame();
+        }
+    </script>
+</body>
+
+</html>
