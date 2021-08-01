@@ -441,11 +441,15 @@ function hex2rgb(hex, opacity) {
     }
 }
 function getHexColor(colorStr) {
+    if(!window.HEX_COLOR_CACHE)window.HEX_COLOR_CACHE = {};
+    if(window.HEX_COLOR_CACHE[colorStr])return window.HEX_COLOR_CACHE[colorStr];
     var a = document.createElement('div');
     a.style.color = colorStr;
     var colors = window.getComputedStyle( document.body.appendChild(a) ).color.match(/\d+/g).map(function(a){ return parseInt(a,10); });
     document.body.removeChild(a);
-    return (colors.length >= 3) ? '#' + (((1 << 24) + (colors[0] << 16) + (colors[1] << 8) + colors[2]).toString(16).substr(1)) : false;
+    const ret = (colors.length >= 3) ? '#' + (((1 << 24) + (colors[0] << 16) + (colors[1] << 8) + colors[2]).toString(16).substr(1)) : false;
+    window.HEX_COLOR_CACHE[colorStr] = ret;
+    return ret;
 }
 function color2rgb(color) {
     let colorStr = '';
