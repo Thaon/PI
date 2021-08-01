@@ -1,26 +1,25 @@
-var scene1;
-
 /**
  * Called to initialize the game and load all the resources needed for it
  */
 function preload() {
-  console.log("Preload started");
 
   Game = new PIGame(64, 64);
-  Game.LoadImage("jelly", "assets/jelly.png");
+  Game.SetBackground(new Color(240, 240, 255, 1));
+  Game.LoadImage("pie", "assets/pie.png");
 
   console.log("Preload complete");
 }
 
 function setup() {
-  scene1 = Game.AddScene("scene1");
+  Game.AddScene("scene1");
   Game.LoadScene("scene1");
 
-  let tester = new ParticlesTester("Tester");
+  let tester = new Tester("Tester");
 
   Game.Instantiate(tester, Vector2(10, 10), 0);
 }
 
 function draw() {
-  Game.GameUpdate();
+    P5.clear();
+    Game.GameUpdate();
 }

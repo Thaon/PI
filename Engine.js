@@ -30,7 +30,7 @@ class Sprite {
   };
 
   DrawScaled = (x, y, scale) => {
-    image(this.sprite, x, y, scale, scale);
+    image(this.sprite, x, y, this.sprite.width * scale, this.sprite.height *  scale);
   };
 }
 
@@ -45,6 +45,7 @@ class GameObject {
 
   Start = () => {};
   Update = (deltaTime) => {};
+  Draw = (deltaTime) => {};
   OnClick = () => {};
 }
 
@@ -79,8 +80,8 @@ class RenderSystem {
       push();
       let pos = go.transform.position;
       translate(pos.x, pos.y);
-      rotate(go.transform.rotation);
-      go.sprite.DrawScaled(pos.x, pos.y, go.transform.scale);
+      rotate(radians(go.transform.rotation));
+      go.sprite.DrawScaled(0, 0, go.transform.scale);
       pop();
     });
   };
@@ -96,27 +97,26 @@ class PIGame {
     this.startTimeMS = Date.now();
   }
   startTimeMS = 0;
+  backgroundColor = new Color(255,255,255,1);
 
   input = new Input();
   renderSystem = new RenderSystem();
   sceneManager = new SceneManager();
   sprites = [];
+  fonts = [];
 
   //preload resources for the game in here
   Init = (width, height) => {
-    P5.createCanvas(width, height);
+    let canvas = P5.createCanvas(width, height);
+    canvas.mouseClicked(this.checkForObjectClicks);
   };
-  //general update loop, note: this is global
-  GameUpdate = () => {
-    //calculate deltaTime
-    Time.deltaTime = (Date.now() - this.startTimeMS) / 1000;
 
-    //update input
-    this.input.UpdateInput();
+  SetBackground = (color) => {
+    this.backgroundColor = color;
+  }
 
-    //update all GameObjects
-    this.Update(deltaTime);
-
+  //check for clicks on instantiated objects
+  checkForObjectClicks = () => {
     //check for clicks on GameObjects
     if (this.sceneManager.activeScene != null) {
       let toCheck = this.sceneManager.activeScene.objects.filter(
@@ -127,41 +127,82 @@ class PIGame {
         if (mouseClicked.pressed) {
           if (
             //AABB collision check (note: this may fail if the object is rotated)
-            mouseClicked.x >= go.transform.position.x &&
-            mouseClicked.x <= go.transform.position.x + go.sprite.width &&
-            mouseClicked.x >= go.transform.position.y &&
-            mouseClicked.x <= go.transform.position.y + go.sprite.height
+            mouseClicked.x/4 >= go.transform.position.x - ( go.sprite.sprite.width * go.transform.scale ) / 2 &&
+            mouseClicked.x/4 <= go.transform.position.x + ( go.sprite.sprite.width * go.transform.scale ) / 2 &&
+            mouseClicked.y/4 >= go.transform.position.y - ( go.sprite.sprite.height * go.transform.scale ) / 2 &&
+            mouseClicked.y/4 <= go.transform.position.y + ( go.sprite.sprite.height * go.transform.scale ) / 2
           )
             go.OnClick();
         }
       });
     }
+  }
 
+  //general update loop, note: this is global
+  GameUpdate = () => {
+    //calculate deltaTime
+    Time.deltaTime = (Date.now() - this.startTimeMS) / 1000;
+
+    //update input
+    this.input.UpdateInput();
+
+    //update all GameObjects
+    this.Update(Time.deltaTime);
+    
     //render the scene
-    this.Render();
+    this.Render(Time.deltaTime);
 
     //reset deltaTime calculations
     this.startTimeMS = Date.now();
   };
 
+  //Sprites management --------------------------------------------------------------------------------------------------
   LoadImage = (name, path) => {
-    P5.loadImage(
-      path,
-      (image) => {
-        P5.imageMode(CENTER);
-        let spr = new Sprite(name, image);
-        this.sprites.push(spr);
-      },
-      () => console.log("error")
-    );
+    let img = P5.loadImage(path);
+    P5.get();
+    if (img == null)
+    {
+      console.log("Could not load the image: " + name);
+      return;
+    }
+
+      P5.rectMode(CENTER);
+      P5.imageMode(CENTER);
+      let spr = new Sprite(name, img);
+      this.sprites.push(spr);
   };
 
   GetSprite = (name) => {
-    let img = sprites.find((X) => X.name == name);
-    if (img != null) return img.image;
-    else console.log("COuld not find the image: " + name);
+    let spr = this.sprites.find((X) => X.name == name);
+    if (spr != null) return spr;
+    else console.log("Could not find the image: " + name);
   };
 
+  //Font management --------------------------------------------------------------------------------------------------
+  LoadFont = (name, path) => {
+    let font = P5.loadFont(path);
+    this.fonts.push({name, font});
+  }
+
+  GetFont = (name) => {
+    let fnt = this.fonts.find((X) => X.name == name);
+    if (fnt != null) return fnt.font;
+    else console.log("Could not find the font: " + name);
+  }
+
+  DrawText = (text, position, size) => {
+    P5.textSize(size);
+    P5.text(text, position.x, position.y);
+  }
+
+  DrawTextAdv = (text, position, size, color, align) => {
+    P5.textSize(size);
+    P5.textAlign(align, align);
+    P5.fill(color.red, color.green, color.blue);
+    P5.text(text, position.x, position.y);
+  }
+
+  //Scenes management --------------------------------------------------------------------------------------------------
   AddScene = (name) => {
     this.sceneManager.scenes.push(new Scene(name));
   };
@@ -183,21 +224,33 @@ class PIGame {
   };
 
   //render method, can be abstracted to swap renderers
-  Render = () => {
+  Render = (deltaTime) => {
     //clear the context
-    P5.clear();
+    P5.background(this.backgroundColor.red, this.backgroundColor.green, this.backgroundColor.blue);
+
+    //first we render the particle systems on the back
+    if (backgroundParticles.length > 0) {
+      RenderParticles("BACK");
+    }
 
     if (this.renderSystem != null) {
-      //first we render all GameObjects
+      //then we render all GameObjects
       this.renderSystem.Render(this.sceneManager.activeScene);
 
       //then we render the particle systems on top
       if (particles.length > 0) {
-        RenderParticles();
+        RenderParticles("FRONT");
       }
+
+    //finally we call Draw on the GameObjects
+      if (this.sceneManager.activeScene != null)
+      this.sceneManager.activeScene.objects.forEach((go) => {
+        go.Draw(deltaTime);
+      });
     }
   };
 
+  //GameObjects management --------------------------------------------------------------------------------------------------
   Instantiate = (gameObject) => {
     this.Instantiate(gameObject, Vector2(0, 0), 0);
   };
@@ -296,4 +349,18 @@ function RandomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+class Color {
+  constructor(r, g, b, a) {
+    this.red = r;
+    this.green = g;
+    this.blue = b;
+    this.alpha = a;
+  }
+  red;
+  green;
+  blue;
+  alpha;
+}
+
+//generate a global Game variable
 var Game = null;

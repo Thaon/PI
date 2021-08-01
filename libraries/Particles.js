@@ -1,18 +1,6 @@
 // Create an array for the particles
 var particles = [];
-
-class Color {
-  constructor(r, g, b, a) {
-    this.red = r;
-    this.green = g;
-    this.blue = b;
-    this.alpha = a;
-  }
-  red;
-  green;
-  blue;
-  alpha;
-}
+var backgroundParticles = [];
 
 function CreateParticleArray(
   xPos,
@@ -22,15 +10,21 @@ function CreateParticleArray(
   partNumber,
   life,
   innerColor,
-  outerColor
+  outerColor,
+  placement
 ) {
   // Adds particles to the array
   for (var i = 0; i < partNumber; i++) {
+    if (placement == "FRONT")
     particles.push(
       new create(xPos, yPos, spd, rad, life, innerColor, outerColor)
     );
+    else if (placement == "BACK")
+    backgroundParticles.push(
+      new create(xPos, yPos, spd, rad, life, innerColor, outerColor)
+    );
+
   }
-  RenderParticles();
 }
 
 function create(startX, startY, speed, radius, life, innerColor, outerColor) {
@@ -60,11 +54,14 @@ function create(startX, startY, speed, radius, life, innerColor, outerColor) {
 }
 
 // Render and move the particle
-function RenderParticles() {
-  P5.drawingContext.globalCompositeOperation = "multiply";
+function RenderParticles(placement) {
+  P5.drawingContext.globalCompositeOperation = placement == "FRONT" ? "source-over" : "multiply";
+
+  let toRender = placement == "FRONT" ? particles : backgroundParticles;
+
   // Render the particles
-  for (var t = 0; t < particles.length; t++) {
-    var p = particles[t];
+  for (var t = 0; t < toRender.length; t++) {
+    var p = toRender[t];
 
     // Mix the colours
     var gradient = P5.drawingContext.createRadialGradient(
@@ -120,7 +117,8 @@ function RenderParticles() {
     }
 
     if (p.dead == true) {
-      particles.splice(t, 1);
+      toRender.splice(t, 1);
     }
   }
+  if (placement == "BACK") P5.drawingContext.globalCompositeOperation = "source-over";
 }
