@@ -1,5 +1,5 @@
 class Tester extends GameObject {
-  Start = () => {
+  start = () => {
     console.log("start called");
 
     //particles color
@@ -10,14 +10,14 @@ class Tester extends GameObject {
     this.textTimer = 0;
 
     //sprite setup
-    this.sprite = Game.GetSprite("pie");
+    this.sprite = GAME.getSprite("pie");
   };
   
-  Update = (deltaTime) => {
+  update = (deltaTime) => {
     // console.log("update called, delta: " + deltaTime);
     
     //create a particle system
-    CreateParticleArray(
+    create_particle_array(
       this.transform.position.x,
       this.transform.position.y,
       1,
@@ -30,23 +30,23 @@ class Tester extends GameObject {
       );
       
     //move, rotate and scale the object
-    this.transform.position = Vector2(Game.input.mouse.x, Game.input.mouse.y);
+    this.transform.position = Vector2(GAME.input.mouse.x, GAME.input.mouse.y);
     this.transform.rotation += deltaTime * 100;
     this.transform.scale = P5.abs(0.05 * P5.sin(this.transform.rotation / 100));
     
     
   };
   
-  Draw = (deltaTime) => {
+  draw = (deltaTime) => {
     //draw text if clicked
     if (this.textTimer > 0)
     {
-      Game.DrawText("Clicked!", Vector2(10, 10), 11, new Color(0,0,0,0), CENTER);
+      GAME.drawText("Clicked!", Vector2(10, 10), 11, new Color(0,0,0,0), CENTER);
       this.textTimer -= deltaTime;
     }
   }
 
-  OnClick = () => {
+  onClick = () => {
     console.log("You clicked me!");
     this.textTimer = 1;
   }

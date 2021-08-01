@@ -3,23 +3,23 @@
  */
 function preload() {
 
-  Game = new PIGame(64, 64);
-  Game.SetBackground(new Color(240, 240, 255, 1));
-  Game.LoadImage("pie", "assets/pie.png");
+    GAME = new PIGame(64, 64);
+    GAME.setBackground(new Color(240, 240, 255, 1));
+    GAME.loadImage("pie", "assets/pie.png");
 
-  console.log("Preload complete");
+    console.log("Preload complete");
 }
 
 function setup() {
-  Game.AddScene("scene1");
-  Game.LoadScene("scene1");
+    GAME.addScene("scene1");
+    GAME.loadScene("scene1");
 
-  let tester = new Tester("Tester");
+    let tester = new Tester("Tester");
 
-  Game.Instantiate(tester, Vector2(10, 10), 0);
+    GAME.instantiate(tester, Vector2(10, 10), 0);
 }
 
 function draw() {
     P5.clear();
-    Game.GameUpdate();
+    GAME.gameUpdate();
 }

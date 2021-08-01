@@ -2,7 +2,7 @@
 var particles = [];
 var backgroundParticles = [];
 
-function CreateParticleArray(
+function create_particle_array(
   xPos,
   yPos,
   spd,
@@ -33,8 +33,8 @@ function create(startX, startY, speed, radius, life, innerColor, outerColor) {
   this.y = startY;
 
   // Add random velocity to each particle
-  this.vx = RandomRange(-speed, speed);
-  this.vy = RandomRange(-speed, speed);
+  this.vx = random_range(-speed, speed);
+  this.vy = random_range(-speed, speed);
 
   //color management
   this.inner = null;
@@ -43,7 +43,7 @@ function create(startX, startY, speed, radius, life, innerColor, outerColor) {
   this.outerColor = outerColor;
 
   //Random size
-  this.radius = RandomRange(radius * 0.5, radius * 1.5);
+  this.radius = random_range(radius * 0.5, radius * 1.5);
 
   // fade value
   this.fade = 1;
@@ -54,7 +54,7 @@ function create(startX, startY, speed, radius, life, innerColor, outerColor) {
 }
 
 // Render and move the particle
-function RenderParticles(placement) {
+function render_particles(placement) {
   P5.drawingContext.globalCompositeOperation = placement == "FRONT" ? "source-over" : "multiply";
 
   let toRender = placement == "FRONT" ? particles : backgroundParticles;
