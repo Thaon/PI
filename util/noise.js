@@ -527,11 +527,24 @@ function waterColorNoise( x, y, z ) {
     const _yo = 0;
     // const _zo = 0;//TODO: change this if things look weirdly wavy
     const _zo = 0;
-    const fx = 5;
-    const fy = 5;
-    const fz = 5;
+    const fx = 0.8;
+    const fy = 0.8;
+    const fz = 0.8;
     const octaves = [
         [2, 0.5],
+        [2, 0.5],
+    ];
+    return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
+};
+function waterColor2Noise( x, y, z ) {
+    const _xo = 0;
+    const _yo = 0;
+    // const _zo = 0;//TODO: change this if things look weirdly wavy
+    const _zo = 0;
+    const fx = 0.8;
+    const fy = 0.8;
+    const fz = 0.8;
+    const octaves = [
         [2, 0.5],
     ];
     return getNoiseAlt( x+_xo, y+_yo, z+_zo, fx, fy, fz, octaves );
